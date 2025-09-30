@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: g1-nginx
+    ports:
+      - "8080:80"
+    volumes:
+
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app1
+      - app2
+      - app3
+    networks:
+      - distributed_network
+
+  app1:
+
+    build: ./app
+    container_name: app1
+    environment:
+      - APP_ID=app1
+      - PEERS=app2:5000,app3:5000
+    volumes:
+
+      - g1_data_volume:/data
+    networks:
+      - distributed_network
+    ports:
+      - "5001:5000"
+
+  app2:
+    build: ./app
+    container_name: app2
+    environment:
+      - APP_ID=app2
+      - PEERS=app1:5000,app3:5000
+    volumes:
+      - g1_data_volume:/data
+    networks:
+      - distributed_network
+    ports:
+      - "5002:5000"
+
+  app3:
+    build: ./app
+    container_name: app3
+    environment:
+      - APP_ID=app3
+      - PEERS=app1:5000,app2:5000
+    volumes:
+      - g1_data_volume:/data
+    networks:
+      - distributed_network
+    ports:
+      - "5003:5000"
+
+volumes:
+  g1_data_volume:
+    driver: local
+
+networks:
+  distributed_network:
+    name: g1_distributed_network
+    driver: bridge
